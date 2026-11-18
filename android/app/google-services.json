@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "280874371162",
+    "project_id": "si-cilik",
+    "storage_bucket": "si-cilik.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:280874371162:android:54b012b1602c177ef13063",
+        "android_client_info": {
+          "package_name": "com.example.sicilik"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBoVui89Z90Ms6G79P-OlIMwbyjG8oFWLo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
