@@ -16,12 +16,14 @@ class Setting extends StatefulWidget {
   final IconData icon;
   final IconData selectedIcon;
   final String label;
+  final VoidCallback onNavigateToRecipes;
 
   const Setting({
     super.key,
     required this.icon,
     required this.selectedIcon,
     required this.label,
+    required this.onNavigateToRecipes,
   });
 
   @override
@@ -65,6 +67,10 @@ class _SettingState extends State<Setting> {
     if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
       debugPrint('Could not open diet guide');
     }
+  }
+
+  void _openFavoriteRecipes() {
+    widget.onNavigateToRecipes();
   }
 
   Future<void> _logout() async {
@@ -159,6 +165,20 @@ class _SettingState extends State<Setting> {
                           ),
                           child: Column(
                             children: [
+                              _buildContactTile(
+                                icon: Icons.favorite_rounded,
+                                title: 'Resipi Kegemaran',
+                                subtitle: 'Semak resipi yang anda suka.',
+                                onTap: _openFavoriteRecipes,
+                              ),
+
+                              const Divider(
+                                height: 1,
+                                indent: 16,
+                                endIndent: 16,
+                                color: settingBorder,
+                              ),
+
                               _buildContactTile(
                                 icon: Icons.language_rounded,
                                 title: 'Laman Web Rasmi',

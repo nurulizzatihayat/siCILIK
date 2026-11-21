@@ -80,9 +80,23 @@ class AuthGate extends StatelessWidget {
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
+          return Scaffold(
+            backgroundColor: Colors.white,
             body: Center(
-              child: CircularProgressIndicator(color: Color(0xFF2878D0)),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Image.asset(
+                    'assets/sicilik-logo.png',
+                    width: 160,
+                    height: 160,
+                  ),
+                  const SizedBox(height: 20),
+                  const CircularProgressIndicator(
+                    color: Color(0xFF2878D0),
+                  ),
+                ],
+              ),
             ),
           );
         }
@@ -108,6 +122,7 @@ class MainNavigation extends StatefulWidget {
 class _MainNavigationState extends State<MainNavigation> {
   int selectedIndex = 0;
   String? selectedChildId;
+  bool showFavoritesOnly = false;
 
   String get ownerId => FirebaseAuth.instance.currentUser!.uid;
 
@@ -167,30 +182,42 @@ class _MainNavigationState extends State<MainNavigation> {
 
   // Pages are rebuilt with the current navigation and child selection state.
   List<Widget> get pages => [
-    HomeScreen(
-      ownerId: ownerId,
-      onNavigate: (index) {
-        setState(() {
-          selectedIndex = index;
-        });
-      },
-    ),
-    GrowthPage(
-      ownerId: ownerId,
-      initialChildId: selectedChildId,
-      visible: selectedIndex == 1,
-      onChildSelected: (id) {
-        setState(() => selectedChildId = id);
-      },
-    ),
-    MealPlanPage(),
-    RecipesPage(),
-    Setting(
-      icon: Icons.settings_outlined,
-      selectedIcon: Icons.settings_rounded,
-      label: 'Tetapan',
-    ),
-  ];
+  HomeScreen(
+    ownerId: ownerId,
+    onNavigate: (index) {
+      setState(() {
+        selectedIndex = index;
+      });
+    },
+  ),
+
+  GrowthPage(
+    ownerId: ownerId,
+    initialChildId: selectedChildId,
+    visible: selectedIndex == 1,
+    onChildSelected: (id) {
+      setState(() => selectedChildId = id);
+    },
+  ),
+
+  MealPlanPage(),
+
+  RecipesPage(
+    showFavoritesOnly: showFavoritesOnly,
+  ),
+
+  Setting(
+    icon: Icons.settings_outlined,
+    selectedIcon: Icons.settings_rounded,
+    label: 'Tetapan',
+    onNavigateToRecipes: () {
+      setState(() {
+        showFavoritesOnly = true;
+        selectedIndex = 3;
+      });
+    },
+  ),
+];
 
   @override
   Widget build(BuildContext context) {
@@ -237,6 +264,11 @@ class _MainNavigationState extends State<MainNavigation> {
           onDestinationSelected: (index) {
             setState(() {
               selectedIndex = index;
+
+              // Normal Recipes tab shows all recipes.
+              if (index == 3) {
+                showFavoritesOnly = false;
+              }
             });
           },
 

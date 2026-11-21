@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 // --------------------------------------------------
 // COLORS
@@ -26,7 +27,6 @@ class Recipe {
   final Color color;
   final List<String> ingredients;
   final List<String> steps;
-
   final String? servingSize;
   final String? ageSuitability;
   final Map<String, dynamic>? nutrition;
@@ -70,8 +70,8 @@ class Recipe {
       color: const Color(0xFFE8E5FA),
       ingredients: readStringList(data['ingredients']),
       steps: readStringList(data['steps']),
-      servingSize: data['yield']?.toString() ??
-          data['servingSize']?.toString(),
+      servingSize:
+          data['yield']?.toString() ?? data['servingSize']?.toString(),
       ageSuitability: data['ageSuitability']?.toString(),
       nutrition: data['nutrition'] is Map
           ? Map<String, dynamic>.from(data['nutrition'])
@@ -88,7 +88,14 @@ class Recipe {
 // --------------------------------------------------
 
 class RecipesPage extends StatefulWidget {
-  const RecipesPage({super.key});
+  // true = show only favourite recipes
+  // false = show all recipes
+  final bool showFavoritesOnly;
+
+  const RecipesPage({
+    super.key,
+    this.showFavoritesOnly = false,
+  });
 
   @override
   State<RecipesPage> createState() => _RecipesPageState();
@@ -96,14 +103,148 @@ class RecipesPage extends StatefulWidget {
 
 class _RecipesPageState extends State<RecipesPage> {
   String _searchText = '';
-  final Set<String> _favourites = {};
+
+  Set<String> _favourites = {};
+  bool _loadingFavourites = true;
 
   @override
-  Widget build(BuildContext context) {
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.light,
-      child: Container(
-        color: recipeOrange,
+  void initState() {
+    super.initState();
+    _loadFavourites();
+  }
+
+  // --------------------------------------------------
+  // LOAD FAVOURITES
+  // --------------------------------------------------
+
+  Future<void> _loadFavourites() async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      if (!mounted) return;
+
+      setState(() {
+        _favourites = {};
+        _loadingFavourites = false;
+      });
+      return;
+    }
+
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('favourites')
+          .get();
+
+      if (!mounted) return;
+
+      setState(() {
+        _favourites = snapshot.docs.map((doc) => doc.id).toSet();
+        _loadingFavourites = false;
+      });
+
+      debugPrint('Loaded ${_favourites.length} favourites.');
+    } catch (e) {
+      debugPrint('Error loading favourites: $e');
+
+      if (!mounted) return;
+
+      setState(() {
+        _loadingFavourites = false;
+      });
+    }
+  }
+
+  // --------------------------------------------------
+  // ADD OR REMOVE FAVOURITE
+  // --------------------------------------------------
+
+  Future<void> _toggleFavourite(String recipeId) async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Sila log masuk untuk menyimpan resipi kegemaran.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    final favouriteRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('favourites')
+        .doc(recipeId);
+
+    final isFavourite = _favourites.contains(recipeId);
+
+    try {
+      if (isFavourite) {
+        await favouriteRef.delete();
+
+        if (!mounted) return;
+
+        setState(() {
+          _favourites.remove(recipeId);
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Resipi dibuang daripada kegemaran.'),
+            duration: Duration(seconds: 1),
+          ),
+        );
+      } else {
+        await favouriteRef.set({
+          'recipeId': recipeId,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+
+        if (!mounted) return;
+
+        setState(() {
+          _favourites.add(recipeId);
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Resipi disimpan ke kegemaran! ♡'),
+            duration: Duration(seconds: 1),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error updating favourite: $e');
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Tidak berjaya mengemas kini kegemaran.'),
+        ),
+      );
+    }
+  }
+
+  // --------------------------------------------------
+  // BUILD PAGE
+  // --------------------------------------------------
+
+  
+@override
+Widget build(BuildContext context) {
+  return AnnotatedRegion<SystemUiOverlayStyle>(
+    value: SystemUiOverlayStyle.light,
+    child: Scaffold(
+      backgroundColor: recipeOrange,
+      body: SafeArea(
+        bottom: false,
         child: Column(
           children: [
             _buildHeader(),
@@ -113,11 +254,14 @@ class _RecipesPageState extends State<RecipesPage> {
                   top: Radius.circular(28),
                 ),
                 child: Container(
+                  width: double.infinity,
                   color: recipePanel,
                   child: Column(
                     children: [
                       _buildSearchBar(),
-                      Expanded(child: _buildRecipeList()),
+                      Expanded(
+                        child: _buildRecipeList(),
+                      ),
                     ],
                   ),
                 ),
@@ -126,40 +270,52 @@ class _RecipesPageState extends State<RecipesPage> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
+
+  // --------------------------------------------------
   // HEADER
+  // --------------------------------------------------
 
   Widget _buildHeader() {
+    final isFavoritesPage = widget.showFavoritesOnly;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       child: Row(
         children: [
-          const CircleAvatar(
+          CircleAvatar(
             radius: 24,
             backgroundColor: Colors.white,
             child: Icon(
-              Icons.restaurant_menu_rounded,
+              isFavoritesPage
+                  ? Icons.favorite_rounded
+                  : Icons.restaurant_menu_rounded,
               color: recipeOrange,
             ),
           ),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Resipi Sihat',
-                  style: TextStyle(
+                  isFavoritesPage
+                      ? 'Resipi Kegemaran'
+                      : 'Resipi Sihat',
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 26,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 Text(
-                  'Resipi sihat untuk kesihatan anak anda',
-                  style: TextStyle(
+                  isFavoritesPage
+                      ? 'Koleksi resipi kegemaran anda'
+                      : 'Resipi sihat untuk kesihatan anak anda',
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 13,
                   ),
@@ -172,7 +328,9 @@ class _RecipesPageState extends State<RecipesPage> {
     );
   }
 
+  // --------------------------------------------------
   // SEARCH BAR
+  // --------------------------------------------------
 
   Widget _buildSearchBar() {
     return Container(
@@ -185,7 +343,7 @@ class _RecipesPageState extends State<RecipesPage> {
           });
         },
         decoration: InputDecoration(
-          hintText: 'Cari resepi atau bahan...',
+          hintText: 'Cari resipi atau bahan...',
           hintStyle: const TextStyle(
             color: recipeMuted,
             fontSize: 14,
@@ -217,15 +375,28 @@ class _RecipesPageState extends State<RecipesPage> {
     );
   }
 
-  // FIRESTORE RECIPE LIST
+  // --------------------------------------------------
+  // FIRESTORE RECIPE LIST + FAVOURITE FILTER
+  // --------------------------------------------------
 
   Widget _buildRecipeList() {
+    // Wait until favourites are loaded before filtering.
+    if (_loadingFavourites) {
+      return const Center(
+        child: CircularProgressIndicator(
+          color: recipeOrange,
+        ),
+      );
+    }
+
     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
       stream: FirebaseFirestore.instance
           .collection('recipes')
           .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
+          debugPrint('RECIPE FIRESTORE ERROR: ${snapshot.error}');
+
           return const Center(
             child: Padding(
               padding: EdgeInsets.all(20),
@@ -259,17 +430,24 @@ class _RecipesPageState extends State<RecipesPage> {
             .map((doc) => Recipe.fromFirestore(doc))
             .toList();
 
-        // Sort recipes by numeric document ID.
+        // Sort by numeric Firestore document ID.
         recipes.sort((a, b) {
           final idA = int.tryParse(a.id) ?? 0;
           final idB = int.tryParse(b.id) ?? 0;
           return idA.compareTo(idB);
         });
 
-        // Search recipes.
+        // First filter by favourites if this is the favourite page.
+        final favouriteFilteredRecipes = widget.showFavoritesOnly
+            ? recipes
+                .where((recipe) => _favourites.contains(recipe.id))
+                .toList()
+            : recipes;
+
+        // Then apply the search filter.
         final query = _searchText.toLowerCase().trim();
 
-        final filteredRecipes = recipes.where((recipe) {
+        final filteredRecipes = favouriteFilteredRecipes.where((recipe) {
           return query.isEmpty ||
               recipe.name.toLowerCase().contains(query) ||
               recipe.description.toLowerCase().contains(query) ||
@@ -287,7 +465,9 @@ class _RecipesPageState extends State<RecipesPage> {
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
           children: [
             Text(
-              '${filteredRecipes.length} resepi',
+              widget.showFavoritesOnly
+                  ? '${filteredRecipes.length} resipi kegemaran'
+                  : '${filteredRecipes.length} resepi',
               style: const TextStyle(
                 color: recipeMuted,
                 fontSize: 13,
@@ -296,18 +476,33 @@ class _RecipesPageState extends State<RecipesPage> {
             const SizedBox(height: 12),
 
             if (filteredRecipes.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(
+              Padding(
+                padding: const EdgeInsets.symmetric(
                   vertical: 48,
                   horizontal: 20,
                 ),
-                child: Text(
-                  'Tiada resepi ditemui. Cuba carian lain ♡',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: recipeMuted,
-                    fontSize: 15,
-                  ),
+                child: Column(
+                  children: [
+                    Icon(
+                      widget.showFavoritesOnly
+                          ? Icons.favorite_border_rounded
+                          : Icons.search_off_rounded,
+                      size: 48,
+                      color: recipeMuted,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      widget.showFavoritesOnly
+                          ? 'Anda belum mempunyai resipi kegemaran. Tekan ikon hati pada resipi untuk menyimpannya ♡'
+                          : 'Tiada resipi ditemui. Cuba carian lain ♡',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: recipeMuted,
+                        fontSize: 15,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
                 ),
               )
             else
@@ -315,13 +510,7 @@ class _RecipesPageState extends State<RecipesPage> {
                 RecipeCard(
                   recipe: recipe,
                   isFavourite: _favourites.contains(recipe.id),
-                  onFavouriteTap: () {
-                    setState(() {
-                      if (!_favourites.add(recipe.id)) {
-                        _favourites.remove(recipe.id);
-                      }
-                    });
-                  },
+                  onFavouriteTap: () => _toggleFavourite(recipe.id),
                 ),
           ],
         );
@@ -403,7 +592,6 @@ class RecipeCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 4),
-
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -461,9 +649,7 @@ class RecipeCard extends StatelessWidget {
               ),
             ],
           ),
-
           const SizedBox(height: 12),
-
           SizedBox(
             width: double.infinity,
             child: OutlinedButton(
@@ -525,8 +711,7 @@ class RecipeDetailPage extends StatelessWidget {
                   children: [
                     IconButton(
                       tooltip: 'Back',
-                      onPressed: () =>
-                          Navigator.of(context).pop(),
+                      onPressed: () => Navigator.of(context).pop(),
                       icon: const Icon(
                         Icons.arrow_back_rounded,
                         color: Colors.white,
@@ -549,7 +734,6 @@ class RecipeDetailPage extends StatelessWidget {
                 ),
               ),
             ),
-
             Expanded(
               child: ClipRRect(
                 borderRadius: const BorderRadius.vertical(
@@ -558,9 +742,7 @@ class RecipeDetailPage extends StatelessWidget {
                 child: Container(
                   color: recipePanel,
                   child: ListView(
-                    padding: const EdgeInsets.fromLTRB(
-                      16, 18, 16, 28,
-                    ),
+                    padding: const EdgeInsets.fromLTRB(16, 18, 16, 28),
                     children: [
                       // RECIPE IMAGE / EMOJI
                       Container(
@@ -575,7 +757,6 @@ class RecipeDetailPage extends StatelessWidget {
                           style: const TextStyle(fontSize: 88),
                         ),
                       ),
-
                       const SizedBox(height: 18),
 
                       // RECIPE NAME
@@ -587,7 +768,6 @@ class RecipeDetailPage extends StatelessWidget {
                           fontWeight: FontWeight.w800,
                         ),
                       ),
-
                       const SizedBox(height: 8),
 
                       if (recipe.description.isNotEmpty)
@@ -624,7 +804,6 @@ class RecipeDetailPage extends StatelessWidget {
 
                       // INGREDIENTS
                       const SizedBox(height: 24),
-
                       const Text(
                         'Bahan-bahan',
                         style: TextStyle(
@@ -633,7 +812,6 @@ class RecipeDetailPage extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-
                       const SizedBox(height: 12),
 
                       if (recipe.ingredients.isEmpty)
@@ -644,12 +822,9 @@ class RecipeDetailPage extends StatelessWidget {
                       else
                         ...recipe.ingredients.map(
                           (ingredient) => Padding(
-                            padding: const EdgeInsets.only(
-                              bottom: 11,
-                            ),
+                            padding: const EdgeInsets.only(bottom: 11),
                             child: Row(
-                              crossAxisAlignment:
-                                  CrossAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 const Icon(
                                   Icons.check_circle_outline_rounded,
@@ -673,7 +848,6 @@ class RecipeDetailPage extends StatelessWidget {
 
                       // PREPARATION STEPS
                       const SizedBox(height: 18),
-
                       const Text(
                         'Mari kita buat!',
                         style: TextStyle(
@@ -682,7 +856,6 @@ class RecipeDetailPage extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-
                       const SizedBox(height: 12),
 
                       if (recipe.steps.isEmpty)
@@ -695,12 +868,9 @@ class RecipeDetailPage extends StatelessWidget {
                           recipe.steps.length,
                           (index) {
                             return Padding(
-                              padding: const EdgeInsets.only(
-                                bottom: 14,
-                              ),
+                              padding: const EdgeInsets.only(bottom: 14),
                               child: Row(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   CircleAvatar(
                                     radius: 15,
@@ -716,8 +886,7 @@ class RecipeDetailPage extends StatelessWidget {
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: Padding(
-                                      padding:
-                                          const EdgeInsets.only(top: 5),
+                                      padding: const EdgeInsets.only(top: 5),
                                       child: Text(
                                         recipe.steps[index],
                                         style: const TextStyle(
@@ -806,8 +975,60 @@ class RecipeDetailPage extends StatelessWidget {
                         ),
                       ],
 
-                      const SizedBox(height: 24),
+                      // EXTRA IMAGES FOR FIRST FOUR RECIPES
+                      if (recipe.id == '1') ...[
+                        const SizedBox(height: 12),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.asset(
+                            'assets/recipe/Perbezaan Harga Sosej.png',
+                            width: double.infinity,
+                            height: 540,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ],
 
+                      if (recipe.id == '2') ...[
+                        const SizedBox(height: 12),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.asset(
+                            'assets/recipe/Perbezaan Harga Keledek.png',
+                            width: double.infinity,
+                            height: 540,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ],
+
+                      if (recipe.id == '3') ...[
+                        const SizedBox(height: 12),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.asset(
+                            'assets/recipe/Perbezaan Harga Nuget.png',
+                            width: double.infinity,
+                            height: 540,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ],
+
+                      if (recipe.id == '4') ...[
+                        const SizedBox(height: 12),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.asset(
+                            'assets/recipe/Perbezaan Harga Bingsu.png',
+                            width: double.infinity,
+                            height: 540,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ],
+
+                      const SizedBox(height: 24),
                       const Text(
                         'Nikmati makanan anda! ♡',
                         textAlign: TextAlign.center,
