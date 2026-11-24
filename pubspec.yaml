@@ -76,6 +76,7 @@ flutter:
     - assets/recipe/Perbezaan Harga Nuget.png
     - assets/recipe/Perbezaan Harga Sosej.png
     - assets/sicilik-logo.png
+    - assets/carousel/
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see
