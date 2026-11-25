@@ -1218,12 +1218,12 @@ class _GrowthPainter extends CustomPainter {
     final domainStart = rows.first[0];
     final domainEnd = rows.last[0];
     final domainSpan = domainEnd - domainStart;
-    final visibleSpan = math.min(36.0, domainSpan).toDouble();
+    final visibleSpan = math.min(12.0, domainSpan).toDouble();
     var start = domainStart;
     var end = domainEnd;
     if (age != null && visibleSpan < domainSpan) {
       start = math
-          .max(domainStart, ((age! - 24) / 12).floor() * 12.0)
+          .max(domainStart, (age! / 12).floor() * 12.0)
           .toDouble();
       start = math.min(start, domainEnd - visibleSpan).toDouble();
       end = start + visibleSpan;
@@ -1385,22 +1385,24 @@ class _GrowthPainter extends CustomPainter {
       );
     }
 
-    final xTicks = <double>[start];
-    for (var month = start + 12; month < end; month += 12) {
-      xTicks.add(month);
-    }
-    if ((xTicks.last - end).abs() > 0.01) xTicks.add(end);
-    for (final month in xTicks) {
+    final tickInterval = age == null ? 12.0 : 1.0;
+    for (
+      var month = start.ceil().toDouble();
+      month <= end + 0.01;
+      month += tickInterval
+    ) {
       canvas.drawLine(
         Offset(x(month), plot.top),
         Offset(x(month), plot.bottom),
         grid,
       );
-      label(
-        '${month.round()}',
-        Offset(x(month) - 8, plot.bottom + 3),
-        bold: true,
-      );
+      final labelWidth = month >= 100 ? 18.0 : 12.0;
+      final labelX = month == start.ceil().toDouble()
+          ? x(month) + 1
+          : month == end
+          ? x(month) - labelWidth
+          : x(month) - labelWidth / 2;
+      label('${month.round()}', Offset(labelX, plot.bottom + 3), bold: true);
     }
 
     final axisPaint = Paint()

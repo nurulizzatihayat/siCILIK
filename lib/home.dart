@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -188,7 +190,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final birth = DateTime.tryParse((selectedChild!['birth'] ?? '').toString());
 
-    if (birth == null) return 'Age unavailable';
+    if (birth == null) return 'Umur tidak diketahui';
 
     final now = DateTime.now();
 
@@ -196,12 +198,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
     if (now.day < birth.day) months--;
 
-    if (months < 0) return 'Age unavailable';
+    if (months < 0) return 'Umur tidak diketahui';
 
-    final years = months ~/ 12;
-    final remainingMonths = months % 12;
-
-    return '$years years $remainingMonths months';
+    return '$months bulan';
   }
 
   GrowthStatus get growthStatus {
@@ -235,7 +234,7 @@ class _HomeScreenState extends State<HomeScreen> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              title: Text(existing == null ? 'Add Child' : 'Edit Child'),
+              title: Text(existing == null ? 'Tambah Anak' : 'Kemas Kini Anak'),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -243,7 +242,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     TextField(
                       controller: nameController,
                       decoration: const InputDecoration(
-                        labelText: "Child's name",
+                        labelText: 'Nama anak',
                         border: OutlineInputBorder(),
                       ),
                     ),
@@ -253,7 +252,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       leading: const Icon(Icons.calendar_month),
                       title: Text(
                         birth == null
-                            ? 'Select date of birth'
+                            ? 'Pilih tarikh lahir'
                             : '${birth!.day}/${birth!.month}/${birth!.year}',
                       ),
                       onTap: () async {
@@ -275,12 +274,12 @@ class _HomeScreenState extends State<HomeScreen> {
                     DropdownButtonFormField<String>(
                       initialValue: sex,
                       decoration: const InputDecoration(
-                        labelText: 'Gender',
+                        labelText: 'Jantina',
                         border: OutlineInputBorder(),
                       ),
                       items: const [
-                        DropdownMenuItem(value: 'boy', child: Text('Boy')),
-                        DropdownMenuItem(value: 'girl', child: Text('Girl')),
+                        DropdownMenuItem(value: 'boy', child: Text('Lelaki')),
+                        DropdownMenuItem(value: 'girl', child: Text('Perempuan')),
                       ],
                       onChanged: (value) {
                         if (value != null) {
@@ -296,7 +295,7 @@ class _HomeScreenState extends State<HomeScreen> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(dialogContext),
-                  child: const Text('Cancel'),
+                  child: const Text('Batal'),
                 ),
                 ElevatedButton(
                   onPressed: () {
@@ -304,7 +303,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ScaffoldMessenger.of(dialogContext).showSnackBar(
                         const SnackBar(
                           content: Text(
-                            'Please enter the name and date of birth.',
+                            'Sila masukkan nama dan tarikh lahir.',
                           ),
                         ),
                       );
@@ -318,7 +317,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       'sex': sex,
                     });
                   },
-                  child: Text(existing == null ? 'Add Child' : 'Save'),
+                  child: Text(existing == null ? 'Tambah' : 'Simpan'),
                 ),
               ],
             );
@@ -359,7 +358,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Unable to save child: $e')));
+            .showSnackBar(SnackBar(content: Text('Gagal menyimpan maklumat anak: $e')));
       }
     } finally {
       if (mounted) {
@@ -393,14 +392,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Add Child',
+                      'Tambah Anak',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
                       ),
                     ),
                     Text(
-                      'Add another child to monitor their growth.',
+                      'Tambah anak lain untuk memantau tumbesaran mereka.',
                       style: TextStyle(color: Colors.black54, fontSize: 12),
                     ),
                   ],
@@ -446,7 +445,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                               const SizedBox(height: 12),
                               const Text(
-                                'Unable to load growth data.',
+                                'Gagal memuatkan data tumbesaran.',
                                 style: TextStyle(fontWeight: FontWeight.bold),
                               ),
                               const SizedBox(height: 8),
@@ -454,7 +453,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               const SizedBox(height: 16),
                               ElevatedButton(
                                 onPressed: loadChildren,
-                                child: const Text('Try Again'),
+                                child: const Text('Cuba Lagi'),
                               ),
                             ],
                           ),
@@ -467,7 +466,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           children: [
                             if (children.isNotEmpty) ...[
                               const Text(
-                                'Select Child',
+                                'Pilih Anak',
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 16,
@@ -483,7 +482,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                                   return ChoiceChip(
                                     label: Text(
-                                      c['name']?.toString() ?? 'Child',
+                                      c['name']?.toString() ?? 'Anak',
                                     ),
                                     selected: selected,
                                     onSelected: (_) {
@@ -498,7 +497,11 @@ class _HomeScreenState extends State<HomeScreen> {
                               ProfileCard(
                                 name: selectedChild?['name']?.toString() ?? '',
                                 age: ageText,
-                                gender: selectedChild?['sex']?.toString() ?? '',
+                                gender: switch (selectedChild?['sex']?.toString()) {
+                                  'boy' => 'Lelaki',
+                                  'girl' => 'Perempuan',
+                                  final s => s ?? '',
+                                },
                                 onEditPressed: () {
                                   openChildDialog(existing: selectedChild);
                                 },
@@ -508,7 +511,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 child: Padding(
                                   padding: EdgeInsets.all(20),
                                   child: Text(
-                                    'You have not added a child yet.',
+                                    'Anda belum menambah anak.',
                                     style: TextStyle(fontSize: 16),
                                   ),
                                 ),
@@ -525,23 +528,23 @@ class _HomeScreenState extends State<HomeScreen> {
                                   children: [
                                     Expanded(
                                       child: MeasurementTile(
-                                        label: 'Height',
+                                        label: 'Tinggi',
                                         value:
                                             latestMeasurement?['height'] == null
                                             ? '--'
                                             : '${(latestMeasurement!['height'] as num).toStringAsFixed(1)} cm',
-                                        subtitle: 'Latest',
+                                        subtitle: 'Terkini',
                                       ),
                                     ),
                                     const VerticalDivider(width: 1),
                                     Expanded(
                                       child: MeasurementTile(
-                                        label: 'Weight',
+                                        label: 'Berat',
                                         value:
                                             latestMeasurement?['weight'] == null
                                             ? '--'
                                             : '${(latestMeasurement!['weight'] as num).toStringAsFixed(1)} kg',
-                                        subtitle: 'Latest',
+                                        subtitle: 'Terkini',
                                       ),
                                     ),
                                     const VerticalDivider(width: 1),
@@ -566,7 +569,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                                   .toDouble() /
                                                               100)))
                                                   .toStringAsFixed(1),
-                                        subtitle: 'Calculated',
+                                        subtitle: 'Dikira',
                                       ),
                                     ),
                                   ],
@@ -574,7 +577,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                               const SizedBox(height: 24),
                               const Text(
-                                'Growth Status (Height-for-Age)',
+                                'Status Tumbesaran (Tinggi Mengikut Umur)',
                                 style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
@@ -585,59 +588,57 @@ class _HomeScreenState extends State<HomeScreen> {
                                 GrowthStatusCard(
                                   title: growthStatus.title,
                                   zScoreText:
-                                      'Height-for-Age Z-score (HAZ): ${haz!.toStringAsFixed(1)}',
+                                      'Skor-Z Tinggi Mengikut Umur (HAZ): ${haz!.toStringAsFixed(1)}',
                                   rangeText: growthStatus.rangeText,
                                   color: growthStatus.color,
                                 )
                               else
                                 const Text(
-                                  'Growth status is unavailable. Check the birth date, measurement and WHO growth data.',
+                                  'Status tumbesaran tidak tersedia. Sila semak tarikh lahir, ukuran dan data tumbesaran WHO.',
                                   style: TextStyle(color: Colors.black54),
                                 ),
                               const SizedBox(height: 12),
                               const RecommendedActionCard(
-                                message: 'Provide nutritious meals and monitor growth regularly. Consult a healthcare professional for further assessment.',
+                                message: 'Sediakan makanan berkhasiat dan pantau tumbesaran secara berkala. Dapatkan nasihat profesional kesihatan untuk penilaian lanjut.',
+                              ),
+                              const SizedBox(height: 20),
+                              const HomeCarousel(
+                                images: [
+                                  'assets/carousel/Tip Bantut.png',
+                                  'assets/carousel/Tip KZM.png',
+                                  'assets/carousel/Keperluan Tidur_.png',
+                                  'assets/carousel/Keperluan Aktiviti Fizikal.png',
+                                ],
                               ),
                               const SizedBox(height: 20),
                               GridView.count(
-                                crossAxisCount: 3,
+                                crossAxisCount: 2,
+                                childAspectRatio: 1.6,
                                 shrinkWrap: true,
                                 physics: const NeverScrollableScrollPhysics(),
                                 mainAxisSpacing: 12,
                                 crossAxisSpacing: 12,
                                 children: [
                                   QuickActionButton(
-                                    label: 'Growth Chart',
+                                    label: 'Carta Tumbesaran',
                                     icon: Icons.bar_chart,
                                     color: const Color(0xFF1E88E5),
                                     onTap: () => widget.onNavigate(1),
                                   ),
                                   QuickActionButton(
-                                    label: 'Meal Plan',
+                                    label: 'Pelan Makanan',
                                     icon: Icons.restaurant,
                                     color: const Color(0xFF2EA862),
                                     onTap: () => widget.onNavigate(2),
                                   ),
                                   QuickActionButton(
-                                    label: 'Nutrition Tips',
-                                    icon: Icons.list_alt,
-                                    color: const Color(0xFFFF6A2B),
-                                    onTap: () => widget.onNavigate(2),
-                                  ),
-                                  QuickActionButton(
-                                    label: 'Healthy Recipes',
+                                    label: 'Resipi Sihat',
                                     icon: Icons.menu_book,
                                     color: const Color(0xFF7E57C2),
                                     onTap: () => widget.onNavigate(3),
                                   ),
                                   QuickActionButton(
-                                    label: 'Record Data',
-                                    icon: Icons.edit_calendar,
-                                    color: const Color(0xFFE8456B),
-                                    onTap: () => widget.onNavigate(1),
-                                  ),
-                                  QuickActionButton(
-                                    label: 'Settings',
+                                    label: 'Tetapan',
                                     icon: Icons.settings,
                                     color: const Color(0xFF607D8B),
                                     onTap: () => widget.onNavigate(4),
@@ -710,18 +711,18 @@ class _Header extends StatelessWidget {
 
 enum GrowthStatus {
   normal(
-    'Normal Growth',
-    'Within normal range (HAZ ≥ -2 SD)',
+    'Tumbesaran Normal',
+    'Dalam julat normal (HAZ ≥ -2 SD)',
     Color(0xFF2E9E5B),
   ),
   stunting(
-    'Stunting Detected',
-    'Below -2 SD (Stunting range)',
+    'Bantut Dikesan',
+    'Bawah -2 SD (julat bantut)',
     Color(0xFFD32F2F),
   ),
   severeStunting(
-    'Severe Stunting Detected',
-    'Below -3 SD (Severe stunting range)',
+    'Bantut Teruk Dikesan',
+    'Bawah -3 SD (julat bantut teruk)',
     Color(0xFFB71C1C),
   );
 
@@ -758,13 +759,13 @@ class ChildProfile {
     name: 'Adam',
     ageYears: 4,
     ageMonths: 2,
-    gender: 'Boy',
+    gender: 'Lelaki',
     heightCm: 92.0,
     weightKg: 13.5,
     haz: -2.4,
   );
 
-  String get ageText => '$ageYears years $ageMonths months';
+  String get ageText => '$ageYears tahun $ageMonths bulan';
 
   double get bmi => weightKg / ((heightCm / 100) * (heightCm / 100));
 
@@ -976,7 +977,7 @@ class RecommendedActionCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Recommended Action',
+                  'Tindakan Disyorkan',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 4),
@@ -1037,7 +1038,7 @@ class ProfileCard extends StatelessWidget {
         TextButton.icon(
           onPressed: onEditPressed,
           icon: const Icon(Icons.edit, size: 16),
-          label: const Text('Edit Profile'),
+          label: const Text('Kemas Kini Profil'),
           style: TextButton.styleFrom(
             foregroundColor: const Color(0xFF1E88E5),
             backgroundColor: const Color(0xFFE3F0FD),
@@ -1045,6 +1046,109 @@ class ProfileCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(20),
             ),
           ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Auto-sliding carousel of tall infographic images, shown whole (no cropping).
+class HomeCarousel extends StatefulWidget {
+  final List<String> images;
+  final Duration interval;
+
+  const HomeCarousel({
+    super.key,
+    required this.images,
+    this.interval = const Duration(seconds: 5),
+  });
+
+  @override
+  State<HomeCarousel> createState() => _HomeCarouselState();
+}
+
+class _HomeCarouselState extends State<HomeCarousel> {
+  final _controller = PageController();
+  Timer? _timer;
+  int _page = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _restartTimer();
+  }
+
+  // Restarted after every page change so a manual swipe gets a full interval.
+  void _restartTimer() {
+    _timer?.cancel();
+    if (widget.images.length < 2) return;
+    _timer = Timer(widget.interval, () {
+      if (!mounted || !_controller.hasClients) return;
+      _controller.animateToPage(
+        (_page + 1) % widget.images.length,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOut,
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final dpr = MediaQuery.devicePixelRatioOf(context);
+
+    return Column(
+      children: [
+        // Images are 2:3 portrait; match that so they fill the slide exactly.
+        AspectRatio(
+          aspectRatio: 2 / 3,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: LayoutBuilder(
+              builder: (context, constraints) => PageView.builder(
+                controller: _controller,
+                itemCount: widget.images.length,
+                onPageChanged: (i) {
+                  setState(() => _page = i);
+                  _restartTimer();
+                },
+                itemBuilder: (context, i) => ColoredBox(
+                  color: Colors.white,
+                  child: Image.asset(
+                    widget.images[i],
+                    fit: BoxFit.contain,
+                    // Decode at display size; the source files are ~2 MB each.
+                    cacheWidth: (constraints.maxWidth * dpr).round(),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            for (var i = 0; i < widget.images.length; i++)
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 250),
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                width: i == _page ? 20 : 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: i == _page
+                      ? const Color(0xFF1E88E5)
+                      : Colors.black26,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+          ],
         ),
       ],
     );
