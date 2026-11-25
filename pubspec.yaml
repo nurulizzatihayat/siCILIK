@@ -38,7 +38,6 @@ dependencies:
   firebase_core: ^5.1.0
   firebase_auth: ^7.0.1
   cloud_firestore: ^7.1.0
-  http: ^1.6.0
   url_launcher: ^6.3.3
   flutter_local_notifications: ^23.0.0
 
@@ -77,8 +76,6 @@ flutter:
     - assets/recipe/Perbezaan Harga Nuget.png
     - assets/recipe/Perbezaan Harga Sosej.png
     - assets/sicilik-logo.png
-    - assets/nutrition_reference/
-    - assets/nutrition_meals/
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see
