@@ -29,6 +29,8 @@ class Recipe {
   final List<String> steps;
   final String? servingSize;
   final String? ageSuitability;
+  final int? minAgeMonths;
+  final int? maxAgeMonths;
   final Map<String, dynamic>? nutrition;
   final List<String> advantages;
   final List<String> tips;
@@ -44,6 +46,8 @@ class Recipe {
     required this.steps,
     this.servingSize,
     this.ageSuitability,
+    this.minAgeMonths,
+    this.maxAgeMonths,
     this.nutrition,
     this.advantages = const [],
     this.tips = const [],
@@ -73,6 +77,8 @@ class Recipe {
       servingSize:
           data['yield']?.toString() ?? data['servingSize']?.toString(),
       ageSuitability: data['ageSuitability']?.toString(),
+      minAgeMonths: data['minAgeMonths'] is int ? data['minAgeMonths'] as int : null,
+      maxAgeMonths: data['maxAgeMonths'] is int ? data['maxAgeMonths'] as int : null,
       nutrition: data['nutrition'] is Map
           ? Map<String, dynamic>.from(data['nutrition'])
           : null,

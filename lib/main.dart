@@ -95,9 +95,7 @@ class AuthGate extends StatelessWidget {
                     height: 160,
                   ),
                   const SizedBox(height: 20),
-                  const CircularProgressIndicator(
-                    color: Color(0xFF2878D0),
-                  ),
+                  const CircularProgressIndicator(color: Color(0xFF2878D0)),
                 ],
               ),
             ),
@@ -185,42 +183,42 @@ class _MainNavigationState extends State<MainNavigation> {
 
   // Pages are rebuilt with the current navigation and child selection state.
   List<Widget> get pages => [
-  HomeScreen(
-    ownerId: ownerId,
-    onNavigate: (index) {
-      setState(() {
-        selectedIndex = index;
-      });
-    },
-  ),
+    HomeScreen(
+      ownerId: ownerId,
+      initialChildId: selectedChildId,
+      onChildSelected: (id) => setState(() => selectedChildId = id),
+      onNavigate: (index) {
+        setState(() {
+          selectedIndex = index;
+        });
+      },
+    ),
 
-  GrowthPage(
-    ownerId: ownerId,
-    initialChildId: selectedChildId,
-    visible: selectedIndex == 1,
-    onChildSelected: (id) {
-      setState(() => selectedChildId = id);
-    },
-  ),
+    GrowthPage(
+      ownerId: ownerId,
+      initialChildId: selectedChildId,
+      visible: selectedIndex == 1,
+      onChildSelected: (id) {
+        setState(() => selectedChildId = id);
+      },
+    ),
 
-  MealPlanPage(),
+    MealPlanPage(ownerId: ownerId, selectedChildId: selectedChildId),
 
-  RecipesPage(
-    showFavoritesOnly: showFavoritesOnly,
-  ),
+    RecipesPage(showFavoritesOnly: showFavoritesOnly),
 
-  Setting(
-    icon: Icons.settings_outlined,
-    selectedIcon: Icons.settings_rounded,
-    label: 'Tetapan',
-    onNavigateToRecipes: () {
-      setState(() {
-        showFavoritesOnly = true;
-        selectedIndex = 3;
-      });
-    },
-  ),
-];
+    Setting(
+      icon: Icons.settings_outlined,
+      selectedIcon: Icons.settings_rounded,
+      label: 'Tetapan',
+      onNavigateToRecipes: () {
+        setState(() {
+          showFavoritesOnly = true;
+          selectedIndex = 3;
+        });
+      },
+    ),
+  ];
 
   @override
   Widget build(BuildContext context) {

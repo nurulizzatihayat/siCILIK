@@ -6,11 +6,15 @@ import 'database.dart';
 class HomeScreen extends StatefulWidget {
   final String ownerId;
   final ValueChanged<int> onNavigate;
+  final String? initialChildId;
+  final ValueChanged<String>? onChildSelected;
 
   const HomeScreen({
     super.key,
     required this.ownerId,
     required this.onNavigate,
+    this.initialChildId,
+    this.onChildSelected,
   });
 
   static const Color headerBlue = Color(0xFF1E88E5);
@@ -30,15 +34,35 @@ class _HomeScreenState extends State<HomeScreen> {
   bool saving = false;
   String? error;
   double? haz;
+  int _loadRequest = 0;
 
   @override
   void initState() {
     super.initState();
-    loadChildren();
+    loadChildren(selectId: widget.initialChildId);
+  }
+
+  @override
+  void didUpdateWidget(covariant HomeScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialChildId != oldWidget.initialChildId &&
+        (loading || selectedChild?['id'] != widget.initialChildId)) {
+      loadChildren(selectId: widget.initialChildId);
+    }
+  }
+
+  void _selectChild(String id) {
+    final onChildSelected = widget.onChildSelected;
+    if (onChildSelected != null && widget.initialChildId != id) {
+      onChildSelected(id);
+    } else {
+      loadChildren(selectId: id);
+    }
   }
 
   Future<void> loadChildren({String? selectId}) async {
     if (!mounted) return;
+    final request = ++_loadRequest;
 
     setState(() {
       loading = true;
@@ -101,7 +125,7 @@ class _HomeScreenState extends State<HomeScreen> {
         }
       }
 
-      if (!mounted) return;
+      if (!mounted || request != _loadRequest) return;
 
       setState(() {
         children = result;
@@ -110,10 +134,14 @@ class _HomeScreenState extends State<HomeScreen> {
         haz = calculatedHaz;
         loading = false;
       });
+      final currentId = current?['id'];
+      if (widget.initialChildId == null && currentId is String) {
+        widget.onChildSelected?.call(currentId);
+      }
     } catch (e) {
       debugPrint('Growth load failed: $e');
 
-      if (!mounted) return;
+      if (!mounted || request != _loadRequest) return;
 
       setState(() {
         error = e.toString();
@@ -342,7 +370,7 @@ class _HomeScreenState extends State<HomeScreen> {
           result['sex'],
         );
 
-        await loadChildren(selectId: newId);
+        if (mounted) _selectChild(newId);
       } else {
         await repo.updateChild(
           widget.ownerId,
@@ -486,11 +514,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       c['name']?.toString() ?? 'Child',
                                     ),
                                     selected: selected,
-                                    onSelected: (_) {
-                                      loadChildren(
-                                        selectId: c['id'].toString(),
-                                      );
-                                    },
+                                    onSelected: (_) => _selectChild(c['id'].toString()),
                                   );
                                 }).toList(),
                               ),

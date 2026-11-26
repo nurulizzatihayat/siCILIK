@@ -1,0 +1,141 @@
+[
+  {
+    "min": 6,
+    "max": 8,
+    "category": "6–8 bulan",
+    "texture": "dilecek atau dipuri",
+    "energy": "570–630 kcal (contoh sehari)",
+    "pages": [
+      1,
+      2
+    ],
+    "slots": [
+      "breakfast",
+      "morningSnack",
+      "lunch",
+      "afternoonSnack",
+      "dinner"
+    ],
+    "groups": [
+      "bijirin",
+      "protein",
+      "sayur",
+      "buah",
+      "lemak"
+    ],
+    "examples": [
+      "Bubur nasi ayam dan bayam",
+      "Pisang lecek",
+      "Puri betik"
+    ],
+    "serving": "Contoh hidangan utama: ½ cawan bubur nasi pekat.",
+    "water": "Ilustrasi menunjukkan ½ gelas air kosong sehari.",
+    "milk": "Susu ibu mengikut kehendak bayi. Ilustrasi menyenaraikan susu formula sebagai pilihan apabila bayi tidak menyusu susu ibu."
+  },
+  {
+    "min": 9,
+    "max": 11,
+    "category": "9–11 bulan",
+    "texture": "lembut, dicincang atau dipotong kecil",
+    "energy": "660–720 kcal (contoh sehari)",
+    "pages": [
+      3,
+      4
+    ],
+    "slots": [
+      "breakfast",
+      "morningSnack",
+      "lunch",
+      "afternoonSnack",
+      "dinner"
+    ],
+    "groups": [
+      "bijirin",
+      "protein",
+      "sayur",
+      "buah",
+      "lemak"
+    ],
+    "examples": [
+      "Bubur ayam dan tauhu lembut",
+      "Betik dipotong kecil",
+      "Bubur ikan dan bayam merah"
+    ],
+    "serving": "Ilustrasi menggunakan ½ hingga 1 cawan bubur nasi pekat bagi hidangan utama.",
+    "water": "Ilustrasi menunjukkan ½ gelas air kosong sehari.",
+    "milk": "Susu ibu mengikut kehendak bayi. Ilustrasi menyenaraikan susu formula sebagai pilihan apabila bayi tidak menyusu susu ibu."
+  },
+  {
+    "min": 12,
+    "max": 47,
+    "category": "1–3 tahun",
+    "texture": "makanan keluarga",
+    "energy": "900–980 kcal (contoh sehari)",
+    "pages": [
+      5,
+      6,
+      7
+    ],
+    "slots": [
+      "breakfast",
+      "morningSnack",
+      "lunch",
+      "afternoonSnack",
+      "dinner",
+      "supper"
+    ],
+    "groups": [
+      "bijirin",
+      "protein",
+      "sayur",
+      "buah",
+      "tenusu",
+      "lemak"
+    ],
+    "examples": [
+      "Roti dengan telur dan timun",
+      "Nasi dan sup ayam",
+      "Pasta daging dengan sayur"
+    ],
+    "serving": "Contoh makan tengah hari menunjukkan ¾ cawan nasi bersama sup ayam.",
+    "water": "Ilustrasi menunjukkan 2 gelas air kosong sehari.",
+    "milk": "Ilustrasi menunjukkan 2 gelas susu penuh krim sehari."
+  },
+  {
+    "min": 48,
+    "max": 83,
+    "category": "4–6 tahun",
+    "texture": "makanan keluarga",
+    "energy": "1,210–1,300 kcal (contoh sehari)",
+    "pages": [
+      8,
+      9,
+      10,
+      11
+    ],
+    "slots": [
+      "breakfast",
+      "morningSnack",
+      "lunch",
+      "afternoonSnack",
+      "dinner",
+      "supper"
+    ],
+    "groups": [
+      "bijirin",
+      "protein",
+      "sayur",
+      "buah",
+      "tenusu",
+      "lemak"
+    ],
+    "examples": [
+      "Roti, telur hancur dan salad",
+      "Nasi, ayam dengan tauhu dan sup sayur",
+      "Mi goreng daging dan sayur"
+    ],
+    "serving": "Contoh makan tengah hari menunjukkan 1½ senduk nasi bersama lauk.",
+    "water": "Ilustrasi menunjukkan 4 gelas (1,000 ml) air kosong sehari.",
+    "milk": "Ilustrasi menunjukkan 2 gelas (500 ml) susu penuh krim sehari."
+  }
+]
